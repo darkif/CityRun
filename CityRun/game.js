@@ -3,7 +3,6 @@ import './js/libs/weapp-adapter'
 import './js/libs/symbol'
 
 
-
 var THREE = require('./js/build/three.js');
 var TWEEN = require('./js/build/Tween.js');
 var GLTFLoader = require('./js/loaders/GLTFLoader.js');
@@ -15,6 +14,7 @@ var playerCube;
 var anim;
 var mixer;
 var loader = new THREE.GLTFLoader();
+
 
 var car = [];
 var carCube = [];
@@ -37,7 +37,7 @@ var diamondCube = [];
 var coin = [];
 var coinCube = [];
 
-var btn = false;
+var btn = true;
 
 var beginPosX;
 var endPosX;
@@ -47,20 +47,27 @@ var endPosY;
 var tweenUp;
 var tweenDown;
 
+var gameOver=false;
+var score=0;
+
+wx.showShareMenu(true)
+
 function init(){
   //init scene
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
-  camera.position.set(-24, 20, 3.5);
+  camera.position.set(-25, 20, 3.5);
   camera.lookAt(scene.position);
+  
 
   var context = canvas.getContext('webgl');
   renderer = new THREE.WebGLRenderer(context);
   renderer.setSize(innerWidth, innerHeight);
   renderer.setClearColor(new THREE.Color(0xeeeeee));
-  //renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = true;
   canvas.appendChild(renderer.domElement);
 
+ 
   //create light
   var light = new THREE.HemisphereLight(0xbbbbff, 0x444422);
   light.position.set(-30, 20, 10);
@@ -70,13 +77,13 @@ function init(){
   var light1 = new THREE.DirectionalLight(0xaaaaaa);
   light1.position.set(-30, 40, 20);
   //light1.intensity=2;
-  /*light1.castShadow = true;
+  light1.castShadow = true;
   light1.shadow.camera.top = 30;
   light1.shadow.camera.bottom = -15;
   light1.shadow.camera.left = 30;
   light1.shadow.camera.right = -20;
   light1.shadow.camera.near = 0;
-  light1.shadow.camera.far = 100;*/
+  light1.shadow.camera.far = 100;
   scene.add(light1);
 
 //creat player
@@ -92,9 +99,9 @@ function init(){
     scene.add(gltf.scene);
 
     gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].castShadow = true;
-    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].receiveShadow = true;
+    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].receiveShadow = true;
     gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].castShadow = true;
-    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].receiveShadow = true;
+    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].receiveShadow = true;
 
     anim = gltf.animations;
     mixer = new THREE.AnimationMixer(gltf.scene);
@@ -157,13 +164,35 @@ canvas.addEventListener('touchstart', ((e) => {
   e.preventDefault()
   beginPosX = e.touches[0].pageX
   beginPosY = e.touches[0].pageY
-  //屏幕上半部分点击一下跳跃
-  if ((beginPosY < innerHeight / 2) && jumping) {
+}).bind(this))
+
+canvas.addEventListener('touchmove', ((e) => {
+  e.preventDefault()
+  endPosX = e.touches[0].pageX
+  endPosY = e.touches[0].pageY
+  //手指按住左移
+  if (beginPosX < endPosX  && btn) {
+    if (player.position.z <= 4.5) {
+      player.position.z += 0.1;
+    }
+    beginPosX = endPosX;
+  }
+  //按一下右移
+  if (beginPosX > endPosX && btn) {
+    if (player.position.z >= -2.5) {
+      player.position.z -= 0.1;
+    }
+    beginPosX = endPosX;
+  }
+
+  //jump
+  var index = getRandomInt(0, 1);
+  if ((beginPosY-endPosY)>60 && Math.abs(beginPosX-endPosX)<0.1 && jumping && btn) {
     tweenUp.start();
-    var index=getRandomInt(0,1);
+    btn = false;
+    jumping = false;
     mixer.clipAction(anim[index]).play();
     //player.position.y += 1;
-    jumping = false;
 
     beginPosY = innerHeight / 2;
     setTimeout(function () {
@@ -171,38 +200,43 @@ canvas.addEventListener('touchstart', ((e) => {
       tweenDown.start();
       setTimeout(function () {
         mixer.clipAction(anim[index]).stop()
+        btn = true;
         jumping = true;
       }, 330)
     }, 450)
   }
+
 }).bind(this))
 
-canvas.addEventListener('touchmove', ((e) => {
-  e.preventDefault()
+/*wx.onTouchStart(function (e) {
+ 
   endPosX = e.touches[0].pageX
-  endPosY = e.touches[0].pageY
-
-  //手指按住左移
-  if (beginPosX < endPosX) {
-    if (player.position.z <= 4.5) {
-      player.position.z += 0.1;
-    }
-    beginPosX = endPosX;
+  var index = getRandomInt(0, 1);
+  //jump
+  if (e.touches[0].pageY < innerHeight/2 && jumping && btn){
+    tweenUp.start();
+    btn = false;
+    jumping = false;
+    mixer.clipAction(anim[index]).play();
+    //player.position.y += 1;
+   
+    beginPosY = innerHeight / 2;
+    setTimeout(function () {
+      //player.position.y -= 1;
+      tweenDown.start();
+      setTimeout(function () {
+        mixer.clipAction(anim[index]).stop()
+        btn = true;
+        jumping = true;
+      }, 330)
+    }, 450)
   }
-  //按一下右移
-  if (beginPosX > endPosX) {
-    if (player.position.z >= -2.5) {
-      player.position.z -= 0.1;
-    }
-    beginPosX = endPosX;
-  }
+})*/
 
 
-}).bind(this))
-
-
+var frame;
 function animate(){
-  requestAnimationFrame(animate);
+  frame=requestAnimationFrame(animate);
 
 
   TWEEN.update();
@@ -243,13 +277,13 @@ function animate(){
  }
 
   collision(player, playerVertices, carCube,  function () {
-   
-    //scene.remove(player);
+     gameOver=true;
+     //scene.remove(player);
   });
 
   collision(player, playerVertices, treeCube, function () {
-    
-    scene.remove(player);
+    gameOver = true;
+    //scene.remove(player);
   });
 
   collision(player, playerVertices, coinCube, function () {
@@ -259,6 +293,12 @@ function animate(){
   collision(player, playerVertices, diamondCube, function () {
 
   });
+
+  if(gameOver){
+    //cancelAnimationFrame(frame);
+   
+  }
+
 
   renderer.render(scene, camera);
 }
@@ -302,8 +342,8 @@ function creatCar(){
 
   //随机生成car
   setInterval(function () {
-    //var index = getRandomInt(0, 2);
-    var index=2;
+    var index = getRandomInt(0, 2);
+    //var index=2;
     carPos = getRandomInt(0, 5);
 
     if(0==index){
@@ -399,7 +439,7 @@ function creatCar(){
 function creatObject(){
   var tree,tCube;
   loader.load('http://www.shinexr.com:89/rawassets/gltf/tree//Unity2Skfb.gltf', function (gltf) {
-    //gltf.scene.children[0].children[0].castShadow = true;
+    gltf.scene.children[0].children[0].castShadow = true;
     gltf.scene.scale.set(0.5, 0.5, 0.5);
     tree=gltf.scene;
 
@@ -408,7 +448,7 @@ function creatObject(){
  
   var coinObj,cCube;
   loader.load('http://www.shinexr.com:89/rawassets/gltf/coin/Unity2Skfb.gltf', function (gltf) {
-    //gltf.scene.children[0].children[0].children[0].castShadow = true;
+    gltf.scene.children[0].children[0].children[0].castShadow = true;
     coinObj=gltf.scene;
 
     cCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshBasicMaterial({ color: 0x00aaaa, transparent: true,          opacity: 0 }));
@@ -416,7 +456,7 @@ function creatObject(){
 
   var diamondObj,dCube;
   loader.load('http://www.shinexr.com:89/rawassets/gltf/Diamond/Unity2Skfb.gltf', function (gltf) {
-    //gltf.scene.children[0].children[0].children[0].castShadow = true;
+    gltf.scene.children[0].children[0].children[0].castShadow = true;
     diamondObj=gltf.scene;
 
     dCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2, 1), new THREE.MeshBasicMaterial({ color: 0x00aaaa, transparent: true,          opacity: 0 }));
@@ -613,5 +653,5 @@ function getRandomInt(min, max) {
 
 }
 
-
 init()
+
