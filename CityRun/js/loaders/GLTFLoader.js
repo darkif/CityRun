@@ -9,7 +9,7 @@
 import '../libs/weapp-adapter'
 import '../libs/symbol'
 
-var THREE = require('../build/three.js')
+var THREE = require('../three.js')
 
 THREE.GLTFLoader = ( function () {
 

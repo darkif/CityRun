@@ -3,7 +3,7 @@ import './js/libs/weapp-adapter'
 import './js/libs/symbol'
 
 
-var THREE = require('./js/build/three.js');
+var THREE = require('./js/three.js');
 var TWEEN = require('./js/build/Tween.js');
 var GLTFLoader = require('./js/loaders/GLTFLoader.js');
 
@@ -50,7 +50,13 @@ var tweenDown;
 var gameOver=false;
 var score=0;
 
+var sceneHUD;
+var cameraHUD;
+var hudBitmap;
+var hudTexture;
+
 wx.showShareMenu(true)
+
 
 function init(){
   //init scene
@@ -65,6 +71,7 @@ function init(){
   renderer.setSize(innerWidth, innerHeight);
   renderer.setClearColor(new THREE.Color(0xeeeeee));
   renderer.shadowMap.enabled = true;
+  renderer.autoClear = false;//不设置这个HUD会挡住后面的scene
   canvas.appendChild(renderer.domElement);
 
  
@@ -94,50 +101,47 @@ function init(){
   //playerCube.position.set(-13,2,2);
   //scene.add(playerCube);
 
-//load player model
-  loader.load('http://www.shinexr.com:89/rawassets/gltf/character/scene.gltf', function (gltf) {
-    scene.add(gltf.scene);
-
-    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].castShadow = true;
-    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].receiveShadow = true;
-    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].castShadow = true;
-    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].receiveShadow = true;
-
-    anim = gltf.animations;
-    mixer = new THREE.AnimationMixer(gltf.scene);
-    if (anim) {
-      var animation = anim[2];
-      mixer.clipAction(animation).play();
-    }
-    gltf.scene.name = 'player';
-    gltf.scene.position.set(-5, 0, 1);
-    gltf.scene.rotation.y -= 30;
-    player = gltf.scene;
-  });
-
+  //load player model
+  createPlayer()
   //load road
-  loader.load('http://www.shinexr.com:89/rawassets/gltf/road/Unity2Skfb.gltf', function (gltf) {
-
-    scene.add(gltf.scene);
-
-    gltf.scene.children[0].children[0].receiveShadow = true;
-
-
-    gltf.scene.scale.set(1.5, 1, 1);
-    gltf.scene.position.set(40, 0, 1);
-
-  });
+  createRoad()
 
   //生成车
-  creatCar();
+  createCar();
   //生成树、金币等
-  creatObject();
+  createObject();
   //生成房屋
   createHouse();
 
+  //创建UI
+  var hudCanvas = wx.createCanvas();
+  hudCanvas.width = innerWidth;
+  hudCanvas.height = innerHeight;
+  hudBitmap = hudCanvas.getContext('2d');
+  hudBitmap.font = "Normal 40px Arial";
+  hudBitmap.textAlign = 'center';
+  hudBitmap.fillStyle = "rgba(0,0,0,0.75)";
+  hudBitmap.fillText('Initializing', innerWidth / 2, innerHeight / 2);
+
+  //创建一个正交相机
+  cameraHUD = new THREE.OrthographicCamera(
+    -innerWidth / 2, innerWidth / 2,
+    innerHeight / 2, -innerHeight / 2,
+    0, 100
+  );
+
+  sceneHUD = new THREE.Scene();//创建新场景
+  hudTexture = new THREE.Texture(hudCanvas)
+  hudTexture.needsUpdate = true;
+  var material = new THREE.MeshBasicMaterial({ map: hudTexture });
+  material.transparent = true;
+  var planeGeometry = new THREE.PlaneGeometry(innerWidth, innerHeight);
+  var plane = new THREE.Mesh(planeGeometry, material);
+  sceneHUD.add(plane);
   //每帧更新
   animate();
 }
+
 
   tweenUp = new TWEEN.Tween({ x: 0 });
   tweenUp.to({ x: 100 }, 6).easing(TWEEN.Easing.Sinusoidal.InOut);
@@ -277,11 +281,13 @@ function animate(){
  }
 
   collision(player, playerVertices, carCube,  function () {
+ 
      gameOver=true;
      //scene.remove(player);
   });
 
   collision(player, playerVertices, treeCube, function () {
+    
     gameOver = true;
     //scene.remove(player);
   });
@@ -296,17 +302,60 @@ function animate(){
 
   if(gameOver){
     //cancelAnimationFrame(frame);
+    /*setTimeout(function(){
+      //清楚本地缓存
+      wx.clearStorage()
+      //退出当前小游戏
+      wx.exitMiniProgram()
+    },3000)*/
    
   }
 
-
   renderer.render(scene, camera);
+  renderer.render(sceneHUD, cameraHUD);//一定要放最后渲染
 }
 
+//load player
+function createPlayer(){
+  loader.load('http://www.shinexr.com:89/rawassets/gltf/character/scene.gltf', function (gltf) {
+    scene.add(gltf.scene);
 
+    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].castShadow = true;
+    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].receiveShadow = true;
+    gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].castShadow = true;
+    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].receiveShadow = true;
+
+    anim = gltf.animations;
+    mixer = new THREE.AnimationMixer(gltf.scene);
+    if (anim) {
+      var animation = anim[2];
+      mixer.clipAction(animation).play();
+    }
+    gltf.scene.name = 'player';
+    gltf.scene.position.set(-5, 0, 1);
+    gltf.scene.rotation.y -= 30;
+    player = gltf.scene;
+  });
+
+}
+
+//load road
+function createRoad(){
+  loader.load('http://www.shinexr.com:89/rawassets/gltf/road/Unity2Skfb.gltf', function (gltf) {
+
+    scene.add(gltf.scene);
+
+    gltf.scene.children[0].children[0].receiveShadow = true;
+
+
+    gltf.scene.scale.set(1.5, 1, 1);
+    gltf.scene.position.set(40, 0, 1);
+
+  });
+}
 
 //随机生成car
-function creatCar(){
+function createCar(){
   var c0,c0Cube;
   loader.load('http://www.shinexr.com:89/rawassets/gltf/car/car.gltf', function (gltf) {
     gltf.scene.scale.set(0.8, 0.8, 0.8);
@@ -436,7 +485,7 @@ function creatCar(){
 }
 
  //生成树 coin 
-function creatObject(){
+function createObject(){
   var tree,tCube;
   loader.load('http://www.shinexr.com:89/rawassets/gltf/tree//Unity2Skfb.gltf', function (gltf) {
     gltf.scene.children[0].children[0].castShadow = true;
