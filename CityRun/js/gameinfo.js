@@ -2,7 +2,17 @@ const screenWidth  = window.innerWidth
 const screenHeight = window.innerHeight
 
 let atlas = new Image()
-atlas.src = 'images/Common.png'
+atlas.src = 'images/bg.png'
+
+let replay = new Image()
+replay.src = 'images/replay.png'
+
+let exit = new Image()
+exit.src = 'images/exit.png'
+
+let start = new Image()
+start.src = 'images/start.png'
+
 
 export default class GameInfo {
   renderGameScore(ctx, score) {
@@ -16,40 +26,37 @@ export default class GameInfo {
     )
   }
   startGame(ctx) {
-    ctx.drawImage(atlas, 0, 0, 119, 108, screenWidth / 2-100, screenHeight / 2-50, 200, 200)
 
     ctx.fillStyle = "#ffffff"
-    ctx.font = "20px Arial"
+    ctx.font = "bold 40px Arial"
+
     ctx.drawImage(
-      atlas,
-      120, 6, 39, 24,
-      screenWidth / 2 - 60,
-      screenHeight / 2 + 45,
-      120, 40
+      start,
+      screenWidth / 2-110 ,
+      screenHeight / 2 +100,
+      228,100
     )
-    ctx.fillText(
-      '开始游戏',
-      screenWidth / 2,
-      screenHeight / 2 + 70
-    )
+
+
   }
 
   renderGameOver(ctx, score) {
-    ctx.drawImage(atlas, 0, 0, 119, 108, screenWidth / 2 - 150, screenHeight / 2 - 100, 300, 300)
+    ctx.drawImage(atlas,  screenWidth / 2 - 150, screenHeight / 2 - 100, 300, 250)
 
     ctx.fillStyle = "#ffffff"
-    ctx.font    = "20px Arial"
+    ctx.font = "bold 30px verdana"
+
 
     ctx.fillText(
-      '游戏结束',
+      '  Score: ' ,
       screenWidth / 2 ,
-      screenHeight / 2 - 100 + 50
+      screenHeight / 2 - 100 + 130
     )
 
     ctx.fillText(
-      '得分: ' + score,
-      screenWidth / 2 ,
-      screenHeight / 2 - 100 + 130
+      score,
+      screenWidth / 2,
+      screenHeight / 2 + 85
     )
 
     ctx.drawImage(
@@ -61,25 +68,19 @@ export default class GameInfo {
     )
 
     ctx.drawImage(
-      atlas,
-      120, 6, 39, 24,
-      screenWidth / 2 - 60,
-      screenHeight / 2 +45,
-      120, 40
+      replay,
+      screenWidth / 2 +25,
+      screenHeight / 2 + 115,
+      50, 50
     )
 
-
-    ctx.fillText(
-      '退出',
-      screenWidth / 2 ,
-      screenHeight / 2+130 
+    ctx.drawImage(
+      exit,
+      screenWidth / 2 -80,
+      screenHeight / 2 + 115,
+      50, 50
     )
 
-    ctx.fillText(
-      '重新开始',
-      screenWidth / 2,
-      screenHeight / 2 +70
-    )
   }
 }
 

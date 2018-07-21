@@ -82,6 +82,8 @@ function init(){
   
   canvas.appendChild(renderer.domElement);
 
+
+
   ready();
  
   //create light
@@ -120,7 +122,7 @@ function createHUD(){ //bitmap在小游戏中没有需要threejs修改才可使�
   hudCanvas.width = innerWidth;
   hudCanvas.height = innerHeight;
   hudBitmap = hudCanvas.getContext('2d');
-  hudBitmap.font = "20px Arial"
+  hudBitmap.font = "bold 20px Arial"
   hudBitmap.textAlign = 'center';
   hudBitmap.fillStyle = "#ffffff"
   hudBitmap.fillText('Initializing', 80,50);
@@ -132,6 +134,7 @@ function createHUD(){ //bitmap在小游戏中没有需要threejs修改才可使�
     innerHeight / 2, -innerHeight / 2,
     0, 100
   );
+
 
   sceneHUD = new THREE.Scene();//创建新场景
   hudTexture = new THREE.Texture(hudCanvas);
@@ -218,7 +221,11 @@ wx.onTouchStart(function (e) {
   let x = e.touches[0].clientX
   let y = e.touches[0].clientY
   if(starting){
-    if (x > innerWidth / 2 - 45 && x < innerWidth / 2 + 45 && y > innerHeight / 2 + 50 && y < innerHeight / 2 +90) {
+    console.log(innerWidth / 2);
+    console.log(x);
+    console.log(innerHeight / 2);
+    console.log(y);
+    if (x > innerWidth / 2 -80 && x < innerWidth / 2 + 100 && y > innerHeight / 2 + 130 && y < innerHeight / 2 +180) {
       starting=false;
       //生成车
       createCar();
@@ -229,7 +236,7 @@ wx.onTouchStart(function (e) {
     }
   }
   if(gameOver){
-    if (x > innerWidth / 2 - 50 && x < innerWidth / 2 + 50 && y > innerHeight / 2+60 && y < innerHeight / 2 + 80){
+    if (x > innerWidth / 2 +40 && x < innerWidth / 2 + 70 && y > innerHeight / 2+120 && y < innerHeight / 2 + 160){
       reset();
       createPlayer();
       gameOver=false;
@@ -239,7 +246,8 @@ wx.onTouchStart(function (e) {
       createObject();
       animate();
     }
-    if (x > innerWidth / 2 - 50 && x < innerWidth / 2 + 50 && y > innerHeight / 2 +120 && y < innerHeight / 2 + 140) {  
+    if (x > innerWidth / 2 - 70 && x < innerWidth / 2 -30 && y > innerHeight / 2 +120 && y < innerHeight / 2 + 160) {  
+      wx.triggerGC();
       //清楚本地缓存
       wx.clearStorage()
       //退出当前小游戏
@@ -250,6 +258,7 @@ wx.onTouchStart(function (e) {
 
 //重置游戏
 function reset(){
+  wx.triggerGC();
   for (var i in car) {
     scene.remove(car[i]);
     scene.remove(carCube[i]);
@@ -272,11 +281,17 @@ function reset(){
  
 }
 
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 var frame;
 function animate(){
   frame=requestAnimationFrame(animate);
-
+  onWindowResize();
 
   TWEEN.update();
 
@@ -346,7 +361,8 @@ function animate(){
  }
  else{
    hudBitmap.clearRect(0, 0, innerWidth, innerHeight);
-   hudBitmap.fillText("得分: " + score, 80, 50);
+   hudBitmap.font = "bold 20px Arial";
+   hudBitmap.fillText("Score: " + score, 80, 50);
    hudTexture.needsUpdate = true;
 
  }
