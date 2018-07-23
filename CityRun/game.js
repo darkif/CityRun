@@ -8,14 +8,24 @@ var TWEEN = require('./js/build/Tween.js');
 var GLTFLoader = require('./js/loaders/GLTFLoader.js');
 var gameInfo = new GameInfo();
 
+let scorePng = new Image()
+scorePng.src = 'images/score.png'
+
+let coinPng = new Image()
+coinPng.src = 'images/coin.png'
+
+let diamondPng = new Image()
+diamondPng.src = 'images/diamond.png'
+
 var scene, camera, renderer,renderer2;
-var player, p;
+var player;
 var playerVertices = [];
 var playerCube;
 var anim;
 var mixer;
 var loader = new THREE.GLTFLoader();
 
+var road;
 
 var car = [];
 var carCube = [];
@@ -54,6 +64,8 @@ var tweenDown;
 
 var gameOver=false;
 var score=0;
+var coinNum=0;
+var diamondNum=0;
 
 var sceneHUD;
 var cameraHUD;
@@ -221,12 +233,13 @@ wx.onTouchStart(function (e) {
   let x = e.touches[0].clientX
   let y = e.touches[0].clientY
   if(starting){
-    console.log(innerWidth / 2);
-    console.log(x);
-    console.log(innerHeight / 2);
-    console.log(y);
     if (x > innerWidth / 2 -80 && x < innerWidth / 2 + 100 && y > innerHeight / 2 + 130 && y < innerHeight / 2 +180) {
       starting=false;
+      if(!road){
+        createRoad();
+        createPlayer();
+        ready();
+      }
       //生成车
       createCar();
       //生成树、金币等
@@ -239,8 +252,11 @@ wx.onTouchStart(function (e) {
     if (x > innerWidth / 2 +40 && x < innerWidth / 2 + 70 && y > innerHeight / 2+120 && y < innerHeight / 2 + 160){
       reset();
       createPlayer();
-      gameOver=false;
-      score=0;
+      gameOver = false;
+      score = 0;
+      coinNum=0;
+      diamondNum=0;
+      temp=-1;
       createCar();
       createHouse();
       createObject();
@@ -278,7 +294,6 @@ function reset(){
     scene.remove(diamond[i]);
     scene.remove(diamondCube[i]);
   }
- 
 }
 
 function onWindowResize() {
@@ -288,7 +303,7 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-var frame;
+var frame,temp=-1;
 function animate(){
   frame=requestAnimationFrame(animate);
   onWindowResize();
@@ -360,22 +375,47 @@ function animate(){
    gameInfo.startGame(hudBitmap);
  }
  else{
-   hudBitmap.clearRect(0, 0, innerWidth, innerHeight);
-   hudBitmap.font = "bold 20px Arial";
-   hudBitmap.fillText("Score: " + score, 80, 50);
-   hudTexture.needsUpdate = true;
+  
+   if(score>temp){
+     hudBitmap.clearRect(0, 0, innerWidth, innerHeight);
+     hudBitmap.drawImage(
+       scorePng,
+       0, 30,
+       73, 22
+     );
+     hudBitmap.font = "bold 25px Arial";
+     hudBitmap.fillText(": " + score, 100, 50);
+     hudBitmap.drawImage(
+       coinPng,
+       0, 80,
+       40, 43
+     );
+     hudBitmap.font = "bold 20px Arial";
+     hudBitmap.fillText(" X " + coinNum, 60, 115);
 
+     hudBitmap.drawImage(
+       diamondPng,
+       0, 130,
+       40, 43
+     );
+     hudBitmap.fillText(" X " + diamondNum, 60, 165);
+
+     hudTexture.needsUpdate = true;
+     temp=score;
+   }
+   
  }
 
   if(gameOver){
     gameInfo.renderGameOver(hudBitmap, score);
+    hudTexture.needsUpdate = true;
     clearInterval(carId);
     clearInterval(objectId);
     clearInterval(houseId);
     cancelAnimationFrame(frame); 
   }
 
-
+  
   renderer.autoClear = true;
   renderer.render(scene, camera);
   renderer.autoClear = false;
@@ -393,7 +433,7 @@ function createRoad(){
 
     gltf.scene.scale.set(1.5, 1, 1);
     gltf.scene.position.set(40, 0, 1);
-
+    road=gltf.scene;
   });
 }
 
@@ -490,14 +530,13 @@ function createPlayer() {
   var mat = new THREE.MeshBasicMaterial({ color: 0x0000ee });
   playerCube = new THREE.Mesh(geo, mat);
   playerVertices = playerCube.geometry.vertices;
-  //playerCube.position.set(-13,2,2);
-  //scene.add(playerCube);
+
   //player
   loader.load('http://www.shinexr.com:89/rawassets/gltf/character/scene.gltf', function (gltf) {
     gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].castShadow = true;
-    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[3].receiveShadow = true;
+
     gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].castShadow = true;
-    //gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[1].receiveShadow = true;
+
 
     anim = gltf.animations;
     mixer = new THREE.AnimationMixer(gltf.scene);
@@ -780,9 +819,11 @@ function collision(player, playerVertices, object,isReward,isCoin, action) {
               
                   if(isCoin){
                     score+=5;
+                    coinNum++;
                   }
                   else{
                     score+=10;
+                    diamondNum++;
                   }
                 
                   collisionResults[i].object.children[0].count++;
