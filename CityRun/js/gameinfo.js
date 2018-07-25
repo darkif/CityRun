@@ -16,62 +16,41 @@ start.src = 'images/start.png'
 let mask = new Image()
 mask.src = 'images/mask.png'
 
-let tag = new Image()
-tag.src = 'images/tag.png'
+let move = new Image()
+move.src = 'images/move.png'
 
-let explain = new Image()
-explain.src = 'images/explain.png'
-
-let target = new Image()
-target.src = 'images/target.png'
-
-
-
+let bg = new Image()
+bg.src = 'images/mainBG.png'
 
 export default class GameInfo {
 //开始ui
   startGame(ctx) {
     ctx.drawImage(
-      mask,
+      bg,
       0,
       0,
-      1080, 1920
+      innerWidth, innerHeight
     )
 
-    ctx.drawImage(
-       tag,
-       innerWidth/2-100,
-       innerHeight / 2-250,
-       211,100
-     )
-
-    ctx.drawImage(
-      explain,
-      innerWidth / 2 - 120,
-      innerHeight / 2 - 100,
-      284, 46
-    )
-
-    ctx.drawImage(
-      target,
-      innerWidth / 2 - 120,
-      innerHeight / 2 ,
-      248, 17
-    )
-
-    ctx.fillStyle = "#ffffff"
-    ctx.font = "bold 40px Arial"
 
     ctx.drawImage(
       start,
-      screenWidth / 2-110 ,
-      screenHeight / 2 +100,
-      228,100
+      screenWidth / 2-90 ,
+      screenHeight / 2 +150,
+      screenWidth / 2, screenHeight /10
     )
 
 
   }
-
+  //explain game 
+  explainGame(ctx) {
+      ctx.drawImage(
+        move,
+        innerWidth / 2 - 265,
+        innerHeight / 2 - 400,
+        540, 960
+      )
+  }
 
 //游戏结束UI
   renderGameOver(ctx, score) {
@@ -117,4 +96,3 @@ export default class GameInfo {
 
   }
 }
-
